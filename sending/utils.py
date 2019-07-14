@@ -1,10 +1,15 @@
+from django.conf import settings
 from twilio.rest import Client
 from xlrd import open_workbook
 
+from sending import models
+
+DIGIT_OFFSET = 38
+
 
 def send(phone, body):
-    account_sid = 'account SID need to change for sending message'
-    auth_token = 'authenticate token need to change for sending message'
+    account_sid = settings.account_sid
+    auth_token = settings.auth_token
     client = Client(account_sid, auth_token)
 
     message = client.messages.create(
@@ -24,9 +29,9 @@ def isValid(s):
         if not char.isdigit():
             count += 1
 
-    if count_char > 13:
+    if count_char > 10:
         return False
-    if count_char < 11:
+    if count_char < 8:
         return False
     if count > 1:
         return False
@@ -69,5 +74,42 @@ def get_data_form_excel_file(data_file):
     return data_rows
 
 
-def encode_url_phone(url, phone) -> str:
-    return f'{url}{phone}'
+def true_ord(char):
+    return ord(char) - DIGIT_OFFSET
+
+
+def encode_url_phone(host: str = '', url: str = '', phone: str = '') -> str:
+    return f'{host}?url={url}&phone={phone}'
+
+
+def decode_url_phone(encoded_url: str = '') -> dict:
+    return {
+        'url': '/'.join(encoded_url.split('/')[0:-1]),
+        'phone': encoded_url.split('/')[-1]
+    }
+
+
+def create_sms(*, campaign: str = '', campaign_code: str = '',
+               link_campaign: str = '', content: str = '',
+               phone: str = '', sms_status: str = '',
+               tracking_report: str = '', pic: str = '',
+               sale_status: str = '', visit_count: int = 0):
+    sms = models.SMS(
+        campaign=campaign,
+        campaign_code=campaign_code,
+        link_campaign=link_campaign,
+        content=content,
+        phone=phone,
+        sms_status=sms_status,
+        tracking_report=tracking_report,
+        pic=pic,
+        sale_status=sale_status,
+        visit_count=visit_count
+    )
+    sms.save()
+    return sms
+
+
+def get_sms_with_url_phone(link_campaign: str = '', phone: str = ''):
+    return models.SMS.objects.filter(link_campaign=link_campaign, phone=phone).first()
+

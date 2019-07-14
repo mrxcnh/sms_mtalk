@@ -1,4 +1,6 @@
-from django.http import HttpResponse
+from django.conf import settings
+from django.http import HttpResponse, HttpResponseRedirect
+from django.views import View
 from django.views.generic import FormView
 
 from sending import utils
@@ -17,17 +19,53 @@ class UploadFile(FormView):
         for data_row in data_rows:
             no = data_row['No']
             campaign = data_row['Campaign']
+            campaign_code = data_row['Campaign code']
             link_campaign = data_row['Link campaign']
             content = data_row['Content']
             phone = data_row['Phone']
+            sms_status = data_row['SMS status']
+            tracking_report = data_row['Tracking report']
+            pic = data_row['PIC']
+            sale_status = data_row['Sale status']
 
-            if not utils.isValid(phone):
+            if utils.isValid(phone):
+                phone_number = utils.process_number(phone)
+            else:
                 return HttpResponse(f'Invalid-phone number-can not send to:+84{phone} in No:{no}')
 
-            phone_number = utils.process_number(phone)
-            url = utils.encode_url_phone(link_campaign, phone)
+            url = utils.encode_url_phone(settings.HOST, link_campaign, phone)
             body = content.replace(link_campaign, url)
-            a = body
+            sms_data = {
+                'campaign': campaign,
+                'campaign_code': campaign_code,
+                'link_campaign': link_campaign,
+                'content': body,
+                'phone': phone,
+                'sms_status': sms_status,
+                'tracking_report': tracking_report,
+                'pic': pic,
+                'sale_status': sale_status
+            }
+            utils.create_sms(**sms_data)
+            try:
+                utils.send(phone_number, body)
+            except Exception as e:
+                return HttpResponse(f'Message Error: {e}')
+        return HttpResponse(f'Messages sent successfully')
 
     def form_invalid(self, form):
-        return HTTPResponse(f'Invalid file')
+        return HttpResponse(f'Invalid file')
+
+
+class TrackingAccessURL(View):
+    def get(self, request):
+        url = request.GET['url']
+        phone = request.GET['phone']
+        sms = utils.get_sms_with_url_phone(link_campaign=url, phone=phone)
+
+        if sms is None:
+            return HttpResponseRedirect(url)
+
+        sms.visit_count += 1
+        sms.save()
+        return HttpResponseRedirect(url)

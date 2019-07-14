@@ -16,10 +16,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from sending import views as sending_views
-from tracking import views as tracking_views
-
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('send_sms/', sending_views.UploadFile.as_view())
+    path('send_sms/', sending_views.UploadFile.as_view()),
+    path('', sending_views.TrackingAccessURL.as_view())
 ]
