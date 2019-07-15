@@ -7,9 +7,9 @@
 <body>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        Select CSV file to upload:
+        Select file to upload:
         {{ form.as_p }}
-        <input type="submit" value="Upload CSV data" name="submit">
+        <input type="submit" value="Upload" name="submit">
     </form>
 </body>
 </html>

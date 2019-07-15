@@ -59,8 +59,8 @@ class UploadFile(FormView):
 
 class TrackingAccessURL(View):
     def get(self, request):
-        url = request.GET['url']
-        phone = request.GET['phone']
+        url = request.GET.get('url')
+        phone = request.GET.get('phone')
         sms = utils.get_sms_with_url_phone(link_campaign=url, phone=phone)
 
         if sms is None:
